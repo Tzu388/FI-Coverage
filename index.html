@@ -11,12 +11,13 @@
   *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
   html, body { height:100%; }
   body { background:#020a14; font-family:system-ui,-apple-system,'Helvetica Neue',sans-serif; -webkit-font-smoothing:antialiased; }
-  ::-webkit-scrollbar { width:5px; height:5px; }
+  ::-webkit-scrollbar { width:4px; height:4px; }
   ::-webkit-scrollbar-track { background:#020a14; }
   ::-webkit-scrollbar-thumb { background:rgba(198,168,78,0.25); border-radius:3px; }
-  ::-webkit-scrollbar-thumb:hover { background:rgba(198,168,78,0.45); }
   select, option { background:#081729; color:#ddd6c8; }
   ::placeholder { color:#3d5268; }
+  /* Larger native tap targets on mobile */
+  button { -webkit-tap-highlight-color: transparent; }
 </style>
 </head>
 <body>
@@ -31,30 +32,42 @@ const daysUntil = (ds) => { if (!ds) return 999; return Math.floor((new Date(ds)
 const getHealth = (ds) => { const d = daysSince(ds); return d >= 45 ? "stale" : d >= 20 ? "drifting" : "fresh"; };
 const fmtDate   = (ds) => { if (!ds) return "—"; return new Date(ds).toLocaleDateString("en-GB", { day:"numeric", month:"short", year:"2-digit" }); };
 
+// ─── useMobile hook ───────────────────────────────────────────────────────────
+function useMobile() {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
+  useEffect(() => {
+    const h = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener("resize", h);
+    return () => window.removeEventListener("resize", h);
+  }, []);
+  return isMobile;
+}
+
 const C = {
-  bg:"#020a14", surf:"#050f1e", surf2:"#081729", surf3:"#0c2038", surf4:"#102847",
-  bdr:"rgba(198,168,78,0.07)", bdr2:"rgba(198,168,78,0.16)", bdrS:"rgba(198,168,78,0.30)",
+  bg:"#020a14", surf:"#050f1e", surf2:"#081729", surf3:"#0c2038",
+  bdr:"rgba(198,168,78,0.07)", bdr2:"rgba(198,168,78,0.16)",
   txt:"#ddd6c8", txt2:"#7a90a8", txt3:"#3d5268",
-  gold:"#c6a84e", goldL:"#d4b968", goldD:"rgba(198,168,78,0.10)",
+  gold:"#c6a84e", goldD:"rgba(198,168,78,0.10)",
   burg:"#7e1e2e", burgL:"#9b2438", burgD:"rgba(126,30,46,0.18)",
-  em:"#186348", emL:"#1d7a59", emD:"rgba(24,99,72,0.15)",
-  cog:"#a87030", cogL:"#c08840", cogD:"rgba(168,112,48,0.13)",
-  sap:"#145c78", sapL:"#1a7494", sapD:"rgba(20,92,120,0.15)",
+  em:"#186348",  emL:"#1d7a59",   emD:"rgba(24,99,72,0.15)",
+  cog:"#a87030", cogL:"#c08840",  cogD:"rgba(168,112,48,0.13)",
+  sap:"#145c78", sapL:"#1a7494",  sapD:"rgba(20,92,120,0.15)",
 };
 const mono  = "'Courier New','Courier',monospace";
 const sans  = "system-ui,-apple-system,'Helvetica Neue',sans-serif";
 const serif = "Georgia,'Times New Roman',serif";
 
-const pill   = (col,bg,bdr) => ({ display:"inline-flex",alignItems:"center",fontFamily:mono,fontSize:9,padding:"2px 8px",borderRadius:3,color:col,background:bg,letterSpacing:"0.09em",fontWeight:700,border:`0.5px solid ${bdr||"transparent"}` });
-const mkBtn  = (col=C.txt,bg=C.surf3,bdr=C.bdr2) => ({ background:bg,border:`0.5px solid ${bdr}`,borderRadius:5,padding:"7px 14px",cursor:"pointer",fontSize:12,color:col,fontFamily:sans,fontWeight:500,letterSpacing:"0.01em" });
-const inputSt= { background:C.surf2,border:`0.5px solid ${C.bdr2}`,borderRadius:5,padding:"8px 12px",fontSize:13,color:C.txt,fontFamily:sans,width:"100%",boxSizing:"border-box",outline:"none" };
-const cardSt = { background:C.surf,border:`0.5px solid ${C.bdr}`,borderRadius:8,padding:"16px 20px",marginBottom:14 };
-const labelSt= { fontFamily:mono,fontSize:9,color:C.gold,letterSpacing:"0.11em",textTransform:"uppercase",marginBottom:8,display:"block",fontWeight:700 };
-const H_COL  = { stale:C.burgL, drifting:C.cogL, fresh:C.emL };
-const H_BG   = { stale:C.burgD, drifting:C.cogD, fresh:C.emD };
-const H_BDR  = { stale:"rgba(126,30,46,0.35)", drifting:"rgba(168,112,48,0.30)", fresh:"rgba(24,99,72,0.28)" };
-const PL     = { structured:"SP",custody:"CU",dcm:"DC",clearing:"CL" };
-const PNAMES = { structured:"Structured products",custody:"Custody & collateral",dcm:"DCM / ECM / M&A",clearing:"Derivative clearing" };
+const pill    = (col,bg,bdr) => ({ display:"inline-flex",alignItems:"center",fontFamily:mono,fontSize:9,padding:"2px 8px",borderRadius:3,color:col,background:bg,letterSpacing:"0.09em",fontWeight:700,border:`0.5px solid ${bdr||"transparent"}` });
+// mkBtn accepts mobile flag to set minHeight for tap targets
+const mkBtn   = (col=C.txt,bg=C.surf3,bdr=C.bdr2,mob=false) => ({ background:bg,border:`0.5px solid ${bdr}`,borderRadius:5,padding:mob?"10px 14px":"7px 14px",cursor:"pointer",fontSize:12,color:col,fontFamily:sans,fontWeight:500,letterSpacing:"0.01em",minHeight:mob?44:undefined });
+const inputSt = { background:C.surf2,border:`0.5px solid ${C.bdr2}`,borderRadius:5,padding:"10px 12px",fontSize:14,color:C.txt,fontFamily:sans,width:"100%",boxSizing:"border-box",outline:"none",minHeight:44 };
+const cardSt  = { background:C.surf,border:`0.5px solid ${C.bdr}`,borderRadius:8,padding:"14px 16px",marginBottom:12 };
+const labelSt = { fontFamily:mono,fontSize:9,color:C.gold,letterSpacing:"0.11em",textTransform:"uppercase",marginBottom:8,display:"block",fontWeight:700 };
+const H_COL   = { stale:C.burgL, drifting:C.cogL, fresh:C.emL };
+const H_BG    = { stale:C.burgD, drifting:C.cogD, fresh:C.emD };
+const H_BDR   = { stale:"rgba(126,30,46,0.35)", drifting:"rgba(168,112,48,0.30)", fresh:"rgba(24,99,72,0.28)" };
+const PL      = { structured:"SP",custody:"CU",dcm:"DC",clearing:"CL" };
+const PNAMES  = { structured:"Structured products",custody:"Custody & collateral",dcm:"DCM / ECM / M&A",clearing:"Derivative clearing" };
 
 const ALIASES = {
   "ocbc bank":"ocbc","ocbc group":"ocbc","ocbc":"ocbc","bank of singapore":"ocbc","bos":"ocbc",
@@ -76,8 +89,8 @@ function resolveClientId(name, clients) {
 const norm = (c) => ({ strategicMoment:"", recentSignals:"", ...c });
 
 const LS = {
-  get:  (key, fb=null) => { try { const v=localStorage.getItem(key); return v?JSON.parse(v):fb; } catch { return fb; } },
-  set:  (key, val)     => { try { localStorage.setItem(key,JSON.stringify(val)); return true; }  catch { return false; } },
+  get: (key, fb=null) => { try { const v=localStorage.getItem(key); return v?JSON.parse(v):fb; } catch { return fb; } },
+  set: (key, val)     => { try { localStorage.setItem(key,JSON.stringify(val)); return true; }  catch { return false; } },
 };
 
 const DEFAULT_CLIENTS = [
@@ -175,10 +188,10 @@ const DEFAULT_CLIENTS = [
 
 const DEFAULT_EVENTS = [
   { id:"ev1", date:"2026-06-01", title:"Layer 2 sweep due — all client briefs",                             clientId:null,       type:"internal"   },
-  { id:"ev2", date:"2026-06-15", title:"Barclays — Private Bank head vacancy ongoing, no successor named",  clientId:"barclays", type:"leadership" },
+  { id:"ev2", date:"2026-06-15", title:"Barclays — Private Bank head vacancy, no successor named",          clientId:"barclays", type:"leadership" },
   { id:"ev3", date:"2026-06-29", title:"Julius Baer — Vi Sun Yang departs as SEA Market Head",              clientId:"jb",       type:"leadership" },
-  { id:"ev4", date:"2026-07-31", title:"Q2 2026 earnings — Tier 1A (DBS, OCBC, UOB, UOB Kay Hian)",        clientId:null,       type:"earnings"   },
-  { id:"ev5", date:"2026-07-31", title:"Q2 2026 earnings — Tier 1B (JPM, Citi, Barclays, HSBC, StanChart, UBS)", clientId:null, type:"earnings"   },
+  { id:"ev4", date:"2026-07-31", title:"Q2 2026 earnings — Tier 1A (DBS, OCBC, UOB, UOBKH)",               clientId:null,       type:"earnings"   },
+  { id:"ev5", date:"2026-07-31", title:"Q2 2026 earnings — Tier 1B (JPM, Citi, Barclays, HSBC, SCB, UBS)", clientId:null,       type:"earnings"   },
   { id:"ev6", date:"2026-08-01", title:"Layer 1 review due — Coverage Intelligence File",                   clientId:null,       type:"internal"   },
   { id:"ev7", date:"2026-10-31", title:"BNM rate hike watch — Q4 2026 (per Nomura research)",               clientId:null,       type:"regulatory" },
   { id:"ev8", date:"2026-12-31", title:"UBS / CS integration completion target",                             clientId:"ubs",      type:"regulatory" },
@@ -222,52 +235,50 @@ function HealthPill({ status }) {
   const labels = { stale:"STALE", drifting:"DRIFT", fresh:"FRESH" };
   return <span style={pill(H_COL[status],H_BG[status],H_BDR[status])}>{labels[status]}</span>;
 }
-function ProductDots({ products }) {
+
+function ProductDots({ products, small }) {
   return (
-    <div style={{ display:"flex",gap:6,alignItems:"center" }}>
-      {Object.entries(products).map(([k,v])=>{
-        const col=v==="active"?C.emL:v==="warm"?C.gold:C.txt3, filled=v==="active"||v==="warm";
+    <div style={{ display:"flex", gap:small?4:6, alignItems:"center" }}>
+      {Object.entries(products).map(([k,v]) => {
+        const col = v==="active"?C.emL:v==="warm"?C.gold:C.txt3, filled = v==="active"||v==="warm";
         return <div key={k} style={{ display:"flex",flexDirection:"column",alignItems:"center",gap:2 }}>
-          <div style={{ width:8,height:8,borderRadius:"50%",background:filled?col:"transparent",border:`1.5px solid ${col}` }}/>
+          <div style={{ width:small?7:8,height:small?7:8,borderRadius:"50%",background:filled?col:"transparent",border:`1.5px solid ${col}` }}/>
           <span style={{ fontFamily:mono,fontSize:8,color:filled?col:C.txt3 }}>{PL[k]}</span>
         </div>;
       })}
     </div>
   );
 }
+
 function EvTag({ type }) {
-  const map={ earnings:["EARN",C.sapL,C.sapD], leadership:["LEAD",C.burgL,C.burgD], regulatory:["REG",C.cogL,C.cogD], internal:["INT",C.txt3,"transparent"] };
-  const [lbl,col,bg]=map[type]||["?",C.txt3,"transparent"];
+  const map = { earnings:["EARN",C.sapL,C.sapD], leadership:["LEAD",C.burgL,C.burgD], regulatory:["REG",C.cogL,C.cogD], internal:["INT",C.txt3,"transparent"] };
+  const [lbl,col,bg] = map[type]||["?",C.txt3,"transparent"];
   return <span style={pill(col,bg,`${col}55`)}>{lbl}</span>;
 }
-function Divider() { return <div style={{ borderTop:`0.5px solid ${C.bdr}`,margin:"14px 0" }}/>; }
-function StatCard({ label,val,col,bg }) {
-  return <div style={{ background:bg,border:`0.5px solid ${col}22`,borderRadius:8,padding:"14px 18px" }}>
-    <div style={{ fontFamily:mono,fontSize:9,color:C.txt3,textTransform:"uppercase",letterSpacing:"0.11em",marginBottom:10 }}>{label}</div>
-    <div style={{ fontFamily:serif,fontSize:34,lineHeight:1,color:col,fontWeight:400 }}>{val}</div>
+
+function Divider() { return <div style={{ borderTop:`0.5px solid ${C.bdr}`, margin:"14px 0" }}/>; }
+
+function StatCard({ label, val, col, bg }) {
+  return <div style={{ background:bg, border:`0.5px solid ${col}22`, borderRadius:8, padding:"12px 14px" }}>
+    <div style={{ fontFamily:mono,fontSize:9,color:C.txt3,textTransform:"uppercase",letterSpacing:"0.11em",marginBottom:8 }}>{label}</div>
+    <div style={{ fontFamily:serif,fontSize:32,lineHeight:1,color:col,fontWeight:400 }}>{val}</div>
   </div>;
 }
 
-// ─── Delete confirmation inline component ─────────────────────────────────────
-function DeleteButton({ onConfirm }) {
+// Delete with two-step inline confirmation
+function DeleteButton({ onConfirm, mob }) {
   const [armed, setArmed] = useState(false);
   if (armed) return (
-    <div style={{ display:"flex",gap:5,alignItems:"center" }}>
-      <span style={{ fontFamily:mono,fontSize:9,color:C.burgL,letterSpacing:"0.05em" }}>Delete?</span>
-      <button onClick={onConfirm}
-        style={{ ...mkBtn(C.burgL,"none",`${C.burgL}55`),fontSize:10,padding:"3px 8px",fontFamily:mono,letterSpacing:"0.04em" }}>
-        Yes
-      </button>
-      <button onClick={()=>setArmed(false)}
-        style={{ ...mkBtn(C.txt3,"none",C.bdr),fontSize:10,padding:"3px 8px",fontFamily:mono }}>
-        No
-      </button>
+    <div style={{ display:"flex",gap:5,alignItems:"center",flexWrap:"nowrap" }}>
+      <span style={{ fontFamily:mono,fontSize:9,color:C.burgL,whiteSpace:"nowrap" }}>Delete?</span>
+      <button onClick={onConfirm} style={{ ...mkBtn(C.burgL,"none",`${C.burgL}55`,mob),fontSize:10,padding:mob?"8px 12px":"3px 8px",fontFamily:mono }}>Yes</button>
+      <button onClick={()=>setArmed(false)} style={{ ...mkBtn(C.txt3,"none",C.bdr,mob),fontSize:10,padding:mob?"8px 12px":"3px 8px",fontFamily:mono }}>No</button>
     </div>
   );
   return (
     <button onClick={()=>setArmed(true)}
-      style={{ ...mkBtn(C.burg,"none",`${C.burg}44`),fontSize:10,padding:"4px 10px",fontFamily:mono,color:`${C.burgL}99`,letterSpacing:"0.04em" }}
-      title="Permanently delete this trigger">
+      style={{ ...mkBtn(C.burg,"none",`${C.burg}33`,mob),fontSize:10,padding:mob?"8px 12px":"4px 10px",fontFamily:mono,color:`${C.burgL}88` }}
+      title="Permanently delete">
       Delete
     </button>
   );
@@ -275,70 +286,76 @@ function DeleteButton({ onConfirm }) {
 
 // ─── Views ────────────────────────────────────────────────────────────────────
 function CommandView({ clients,outreach,events,setTab,setSelRoutine,setSelClientId,setFields,updateL2,onExport,onImportClick,importRef,onImportChange,importStatus }) {
-  const stale=clients.filter(c=>getHealth(c.l2Updated)==="stale");
-  const drifting=clients.filter(c=>getHealth(c.l2Updated)==="drifting");
-  const openT=outreach.filter(t=>t.status==="open");
-  const overdue=openT.filter(t=>t.due&&daysUntil(t.due)<0);
-  const upcoming=events.filter(e=>daysUntil(e.date)>=0&&daysUntil(e.date)<=60).sort((a,b)=>daysUntil(a.date)-daysUntil(b.date));
+  const mob = useMobile();
+  const px  = mob ? "14px 14px" : "28px 22px";
+  const stale   = clients.filter(c=>getHealth(c.l2Updated)==="stale");
+  const drifting= clients.filter(c=>getHealth(c.l2Updated)==="drifting");
+  const openT   = outreach.filter(t=>t.status==="open");
+  const overdue = openT.filter(t=>t.due&&daysUntil(t.due)<0);
+  const upcoming= events.filter(e=>daysUntil(e.date)>=0&&daysUntil(e.date)<=60).sort((a,b)=>daysUntil(a.date)-daysUntil(b.date));
+
   return (
-    <div style={{ padding:"28px 22px",maxWidth:960,margin:"0 auto" }}>
-      <div style={{ marginBottom:28 }}>
-        <div style={{ fontFamily:serif,fontSize:26,color:C.txt,marginBottom:5,fontWeight:400,letterSpacing:"0.01em" }}>Coverage Intelligence</div>
+    <div style={{ padding:px, maxWidth:960, margin:"0 auto" }}>
+      <div style={{ marginBottom:20 }}>
+        <div style={{ fontFamily:serif,fontSize:mob?20:26,color:C.txt,marginBottom:4,fontWeight:400 }}>Coverage Intelligence</div>
         <div style={{ fontFamily:mono,fontSize:9,color:C.txt3,letterSpacing:"0.09em" }}>{TODAY.toLocaleDateString("en-GB",{weekday:"long",day:"numeric",month:"long",year:"numeric"}).toUpperCase()} · SINGAPORE</div>
       </div>
-      <div style={{ display:"grid",gridTemplateColumns:"repeat(2,1fr)",gap:10,marginBottom:22 }}>
-        <StatCard label="Stale briefs"     val={stale.length}    col={stale.length?C.burgL:C.txt3}   bg={stale.length?C.burgD:C.surf}/>
-        <StatCard label="Drifting briefs"  val={drifting.length} col={drifting.length?C.cogL:C.txt3} bg={drifting.length?C.cogD:C.surf}/>
-        <StatCard label="Open triggers"    val={openT.length}    col={openT.length?C.txt:C.txt3}     bg={C.surf}/>
-        <StatCard label="Overdue outreach" val={overdue.length}  col={overdue.length?C.burgL:C.txt3} bg={overdue.length?C.burgD:C.surf}/>
+
+      <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:9,marginBottom:18 }}>
+        <StatCard label="Stale"     val={stale.length}    col={stale.length?C.burgL:C.txt3}   bg={stale.length?C.burgD:C.surf}/>
+        <StatCard label="Drifting"  val={drifting.length} col={drifting.length?C.cogL:C.txt3} bg={drifting.length?C.cogD:C.surf}/>
+        <StatCard label="Open"      val={openT.length}    col={openT.length?C.txt:C.txt3}     bg={C.surf}/>
+        <StatCard label="Overdue"   val={overdue.length}  col={overdue.length?C.burgL:C.txt3} bg={overdue.length?C.burgD:C.surf}/>
       </div>
+
       <div style={cardSt}>
         <span style={labelSt}>Events — next 60 days</span>
         {upcoming.length===0
-          ?<div style={{ color:C.txt3,fontSize:12,fontFamily:mono }}>No events in next 60 days.</div>
-          :upcoming.map(ev=>{
-            const d=daysUntil(ev.date);
-            return <div key={ev.id} style={{ display:"flex",gap:14,paddingBottom:13,marginBottom:13,borderBottom:`0.5px solid ${C.bdr}` }}>
-              <div style={{ fontFamily:mono,fontSize:11,minWidth:46,color:d<=14?C.burgL:d<=30?C.cogL:C.txt3,paddingTop:2,fontWeight:700,flexShrink:0 }}>{d===0?"TODAY":`${d}d`}</div>
+          ? <div style={{ color:C.txt3,fontSize:12,fontFamily:mono }}>No events in next 60 days.</div>
+          : upcoming.map(ev => {
+            const d = daysUntil(ev.date);
+            return <div key={ev.id} style={{ display:"flex",gap:12,paddingBottom:12,marginBottom:12,borderBottom:`0.5px solid ${C.bdr}` }}>
+              <div style={{ fontFamily:mono,fontSize:11,minWidth:40,color:d<=14?C.burgL:d<=30?C.cogL:C.txt3,paddingTop:2,fontWeight:700,flexShrink:0 }}>{d===0?"TODAY":`${d}d`}</div>
               <div style={{ flex:1 }}>
-                <div style={{ fontSize:12,color:C.txt,marginBottom:6,lineHeight:1.5 }}>{ev.title}</div>
-                <div style={{ display:"flex",gap:8,alignItems:"center" }}><EvTag type={ev.type}/><span style={{ fontFamily:mono,fontSize:10,color:C.txt3,letterSpacing:"0.04em" }}>{fmtDate(ev.date)}</span></div>
+                <div style={{ fontSize:mob?13:12,color:C.txt,marginBottom:5,lineHeight:1.5 }}>{ev.title}</div>
+                <div style={{ display:"flex",gap:8,alignItems:"center" }}><EvTag type={ev.type}/><span style={{ fontFamily:mono,fontSize:10,color:C.txt3 }}>{fmtDate(ev.date)}</span></div>
               </div>
             </div>;
-        })}
+          })}
       </div>
+
+      {/* Routine launcher — single column on mobile */}
       <div style={cardSt}>
         <span style={labelSt}>Routine launcher</span>
-        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:9 }}>
-          {ROUTINES.map(r=>(
+        <div style={{ display:"grid", gridTemplateColumns:mob?"1fr":"1fr 1fr", gap:9 }}>
+          {ROUTINES.map(r => (
             <button key={r.id} onClick={()=>{setSelRoutine(r.id);setSelClientId("");setFields({});setTab("launch");}}
-              style={{ display:"block",width:"100%",textAlign:"left",background:"none",border:`0.5px solid ${C.bdr}`,borderRadius:7,padding:"11px 14px",cursor:"pointer",color:C.txt,fontFamily:sans }}>
-              <div style={{ fontSize:12,fontWeight:500,display:"flex",justifyContent:"space-between" }}><span>{r.label}</span><span style={{ fontFamily:mono,fontSize:11,color:C.gold,opacity:0.8 }}>↗</span></div>
-              <div style={{ fontSize:10,color:C.txt3,marginTop:3,fontFamily:mono }}>{r.sub}</div>
+              style={{ display:"block",width:"100%",textAlign:"left",background:"none",border:`0.5px solid ${C.bdr}`,borderRadius:7,padding:mob?"13px 14px":"11px 14px",cursor:"pointer",color:C.txt,fontFamily:sans,minHeight:mob?54:undefined }}>
+              <div style={{ fontSize:13,fontWeight:500,display:"flex",justifyContent:"space-between" }}><span>{r.label}</span><span style={{ fontFamily:mono,fontSize:11,color:C.gold,opacity:0.8 }}>↗</span></div>
+              <div style={{ fontSize:11,color:C.txt3,marginTop:3,fontFamily:mono }}>{r.sub}</div>
             </button>
           ))}
         </div>
       </div>
+
       <div style={{ ...cardSt,borderColor:`${C.gold}22` }}>
         <span style={labelSt}>Data</span>
-        <div style={{ fontSize:11,color:C.txt3,fontFamily:mono,marginBottom:12,lineHeight:1.8 }}>localStorage active — data persists automatically in this browser.<br/>Export before clearing browser data or switching machines.</div>
+        <div style={{ fontSize:11,color:C.txt3,fontFamily:mono,marginBottom:12,lineHeight:1.8 }}>localStorage active — saves automatically.<br/>Export before clearing browser data.</div>
         <div style={{ display:"flex",gap:8,flexWrap:"wrap",alignItems:"center" }}>
-          <button onClick={onExport} style={{ ...mkBtn(C.gold,C.goldD,`${C.gold}44`),fontSize:11,fontFamily:mono,padding:"5px 12px" }}>Export JSON</button>
-          <button onClick={onImportClick} style={{ ...mkBtn(C.txt2,"none",C.bdr2),fontSize:11,fontFamily:mono,padding:"5px 12px" }}>Import JSON</button>
+          <button onClick={onExport} style={{ ...mkBtn(C.gold,C.goldD,`${C.gold}44`,mob),fontSize:11,fontFamily:mono,padding:mob?"10px 16px":"5px 12px" }}>Export JSON</button>
+          <button onClick={onImportClick} style={{ ...mkBtn(C.txt2,"none",C.bdr2,mob),fontSize:11,fontFamily:mono,padding:mob?"10px 16px":"5px 12px" }}>Import JSON</button>
           <input ref={importRef} type="file" accept=".json" style={{ display:"none" }} onChange={onImportChange}/>
           {importStatus&&<span style={{ fontFamily:mono,fontSize:11,color:importStatus.ok?C.emL:C.burgL }}>{importStatus.msg}</span>}
         </div>
       </div>
+
       {(stale.length>0||drifting.length>0)&&<div style={cardSt}>
         <span style={labelSt}>Briefs requiring attention</span>
-        {[...stale,...drifting].map(c=>{
-          const h=getHealth(c.l2Updated),d=daysSince(c.l2Updated);
-          return <div key={c.id} style={{ background:H_BG[h],border:`0.5px solid ${H_BDR[h]}`,borderRadius:6,padding:"10px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8 }}>
-            <div>
-              <div style={{ fontSize:12,fontWeight:500,color:C.txt }}>{c.name}</div>
-              <div style={{ fontFamily:mono,fontSize:10,color:H_COL[h],marginTop:3 }}>Tier {c.tier} · {d}d since update</div>
-            </div>
-            <button onClick={()=>updateL2(c.id)} style={{ background:"none",border:`0.5px solid ${H_COL[h]}`,borderRadius:4,padding:"4px 10px",cursor:"pointer",fontSize:10,color:H_COL[h],fontFamily:mono }}>Mark updated</button>
+        {[...stale,...drifting].map(c => {
+          const h=getHealth(c.l2Updated), d=daysSince(c.l2Updated);
+          return <div key={c.id} style={{ background:H_BG[h],border:`0.5px solid ${H_BDR[h]}`,borderRadius:6,padding:"11px 14px",display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,gap:10 }}>
+            <div><div style={{ fontSize:13,fontWeight:500,color:C.txt }}>{c.name}</div><div style={{ fontFamily:mono,fontSize:10,color:H_COL[h],marginTop:3 }}>Tier {c.tier} · {d}d</div></div>
+            <button onClick={()=>updateL2(c.id)} style={{ ...mkBtn("none","none",H_COL[h],mob),border:`0.5px solid ${H_COL[h]}`,color:H_COL[h],fontSize:11,padding:mob?"9px 12px":"5px 10px",fontFamily:mono,flexShrink:0 }}>Updated</button>
           </div>;
         })}
       </div>}
@@ -347,68 +364,101 @@ function CommandView({ clients,outreach,events,setTab,setSelRoutine,setSelClient
 }
 
 function CoverageView({ clients,setClients,setSelClientId,setSelRoutine,setFields,setTab,updateL2 }) {
-  const [expandedId,setExpandedId]=useState(null);
-  const sorted=[...clients].sort((a,b)=>{
+  const mob = useMobile();
+  const [expandedId, setExpandedId] = useState(null);
+  const px = mob ? "14px 14px" : "28px 22px";
+  const sorted = [...clients].sort((a,b) => {
     const o={stale:0,drifting:1,fresh:2};
     const ha=getHealth(a.l2Updated),hb=getHealth(b.l2Updated);
     return o[ha]!==o[hb]?o[ha]-o[hb]:a.tier.localeCompare(b.tier);
   });
-  const updProd=(cid,prod,val)=>setClients(prev=>prev.map(c=>c.id===cid?{...c,products:{...c.products,[prod]:val}}:c));
+  const updProd = (cid,prod,val) => setClients(prev=>prev.map(c=>c.id===cid?{...c,products:{...c.products,[prod]:val}}:c));
+
   return (
-    <div style={{ padding:"28px 22px" }}>
-      <div style={{ fontFamily:serif,fontSize:22,color:C.txt,marginBottom:4,fontWeight:400 }}>Coverage Grid</div>
-      <div style={{ fontFamily:mono,fontSize:9,color:C.txt3,marginBottom:20,letterSpacing:"0.07em" }}>{clients.length} CLIENTS · CLICK ROW TO EXPAND</div>
-      {sorted.map((c,i)=>{
-        const h=getHealth(c.l2Updated),isExp=expandedId===c.id,isUrgent=c.nextAction.includes("URGENT");
-        return <div key={c.id} style={{ border:`0.5px solid ${isExp?C.bdr2:C.bdr}`,borderLeft:`2px solid ${isUrgent?C.burgL:isExp?C.gold:"transparent"}`,borderRadius:8,marginBottom:6,overflow:"hidden",background:isExp?C.surf2:i%2===0?C.surf:"transparent" }}>
-          <div onClick={()=>setExpandedId(isExp?null:c.id)} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"13px 16px",cursor:"pointer" }}>
-            <div style={{ flex:1,minWidth:0 }}>
-              <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:4 }}>
-                <span style={{ fontSize:13,color:isUrgent?C.burgL:C.txt,fontWeight:isUrgent?500:400 }}>{c.name}</span>
-                <span style={{ fontFamily:mono,fontSize:9,color:C.gold,letterSpacing:"0.08em",border:`0.5px solid ${C.goldD}`,padding:"1px 6px",borderRadius:3 }}>T{c.tier}</span>
-                {isUrgent&&<span style={pill(C.burgL,C.burgD,`${C.burgL}44`)}>URGENT</span>}
+    <div style={{ padding:px }}>
+      <div style={{ fontFamily:serif,fontSize:mob?20:22,color:C.txt,marginBottom:4,fontWeight:400 }}>Coverage Grid</div>
+      <div style={{ fontFamily:mono,fontSize:9,color:C.txt3,marginBottom:16,letterSpacing:"0.07em" }}>{clients.length} CLIENTS · TAP ROW TO EXPAND</div>
+
+      {sorted.map((c,i) => {
+        const h=getHealth(c.l2Updated), isExp=expandedId===c.id, isUrgent=c.nextAction.includes("URGENT");
+        return <div key={c.id} style={{ border:`0.5px solid ${isExp?C.bdr2:C.bdr}`,borderLeft:`2px solid ${isUrgent?C.burgL:isExp?C.gold:"transparent"}`,borderRadius:8,marginBottom:7,overflow:"hidden",background:isExp?C.surf2:i%2===0?C.surf:"transparent" }}>
+
+          {/* Row header — stacks on mobile */}
+          <div onClick={()=>setExpandedId(isExp?null:c.id)} style={{ padding:mob?"12px 14px":"13px 16px",cursor:"pointer" }}>
+            {mob ? (
+              // Mobile: name + badges on first line, next action on second, health+dots on third
+              <div>
+                <div style={{ display:"flex",alignItems:"center",gap:6,marginBottom:4,flexWrap:"wrap" }}>
+                  <span style={{ fontSize:14,color:isUrgent?C.burgL:C.txt,fontWeight:isUrgent?600:500 }}>{c.name}</span>
+                  <span style={{ fontFamily:mono,fontSize:9,color:C.gold,border:`0.5px solid ${C.goldD}`,padding:"1px 5px",borderRadius:3 }}>T{c.tier}</span>
+                  {isUrgent&&<span style={pill(C.burgL,C.burgD,`${C.burgL}44`)}>URGENT</span>}
+                </div>
+                <div style={{ fontSize:12,color:C.txt2,marginBottom:8,lineHeight:1.45,paddingRight:8 }}>{c.nextAction.replace("URGENT — ","")}</div>
+                <div style={{ display:"flex",alignItems:"center",justifyContent:"space-between" }}>
+                  <HealthPill status={h}/>
+                  <ProductDots products={c.products} small/>
+                </div>
               </div>
-              <div style={{ fontSize:11,color:C.txt2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap",lineHeight:1.4 }}>{c.nextAction.replace("URGENT — ","")}</div>
-            </div>
-            <div style={{ display:"flex",flexDirection:"column",alignItems:"flex-end",gap:7,marginLeft:14,flexShrink:0 }}>
-              <HealthPill status={h}/><ProductDots products={c.products}/>
-            </div>
+            ) : (
+              // Desktop: original side-by-side layout
+              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center" }}>
+                <div style={{ flex:1,minWidth:0 }}>
+                  <div style={{ display:"flex",alignItems:"center",gap:8,marginBottom:4 }}>
+                    <span style={{ fontSize:13,color:isUrgent?C.burgL:C.txt,fontWeight:isUrgent?500:400 }}>{c.name}</span>
+                    <span style={{ fontFamily:mono,fontSize:9,color:C.gold,border:`0.5px solid ${C.goldD}`,padding:"1px 6px",borderRadius:3,letterSpacing:"0.08em" }}>T{c.tier}</span>
+                    {isUrgent&&<span style={pill(C.burgL,C.burgD,`${C.burgL}44`)}>URGENT</span>}
+                  </div>
+                  <div style={{ fontSize:11,color:C.txt2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" }}>{c.nextAction.replace("URGENT — ","")}</div>
+                </div>
+                <div style={{ display:"flex",flexDirection:"column",alignItems:"flex-end",gap:7,marginLeft:14,flexShrink:0 }}>
+                  <HealthPill status={h}/><ProductDots products={c.products}/>
+                </div>
+              </div>
+            )}
           </div>
-          {isExp&&<div style={{ padding:"16px 18px",borderTop:`0.5px solid ${C.bdr}`,background:C.surf }}>
+
+          {/* Expanded content */}
+          {isExp&&<div style={{ padding:mob?"14px 14px":"16px 18px",borderTop:`0.5px solid ${C.bdr}`,background:C.surf }}>
             {(c.strategicMoment||c.recentSignals)&&<div style={{ marginBottom:16,paddingBottom:16,borderBottom:`0.5px solid ${C.bdr}` }}>
-              {c.strategicMoment&&<div style={{ marginBottom:12 }}><span style={labelSt}>Strategic moment</span><div style={{ fontSize:12,color:C.txt,lineHeight:1.75 }}>{c.strategicMoment}</div></div>}
-              {c.recentSignals&&<div><span style={labelSt}>Recent signals</span><div style={{ fontSize:11,color:C.txt2,lineHeight:1.85,fontFamily:mono,whiteSpace:"pre-line" }}>{c.recentSignals}</div></div>}
+              {c.strategicMoment&&<div style={{ marginBottom:12 }}><span style={labelSt}>Strategic moment</span><div style={{ fontSize:mob?13:12,color:C.txt,lineHeight:1.75 }}>{c.strategicMoment}</div></div>}
+              {c.recentSignals&&<div><span style={labelSt}>Recent signals</span><div style={{ fontSize:mob?12:11,color:C.txt2,lineHeight:1.85,fontFamily:mono,whiteSpace:"pre-line" }}>{c.recentSignals}</div></div>}
             </div>}
+
             <div style={{ marginBottom:14 }}>
               <span style={labelSt}>Next action</span>
-              <div style={{ fontSize:12,color:C.txt,lineHeight:1.65,marginBottom:12 }}>{c.nextAction.replace("URGENT — ","")}</div>
-              <div style={{ display:"flex",gap:6,flexWrap:"wrap" }}>
+              <div style={{ fontSize:mob?13:12,color:C.txt,lineHeight:1.65,marginBottom:12 }}>{c.nextAction.replace("URGENT — ","")}</div>
+              {/* Action buttons — single column on mobile, row on desktop */}
+              <div style={{ display:"grid",gridTemplateColumns:mob?"1fr 1fr":"repeat(4,auto)",gap:8 }}>
                 {[["meeting-prep","Meeting prep"],["post-call","Post-call"],["earnings","Earnings"],["l2-refresh","Refresh L2"]].map(([rid,rlbl])=>(
                   <button key={rid} onClick={()=>{setSelClientId(c.id);setSelRoutine(rid);setFields({});setTab("launch");}}
-                    style={{ ...mkBtn(rid==="l2-refresh"?C.sapL:C.txt,rid==="l2-refresh"?C.sapD:C.surf3,rid==="l2-refresh"?`${C.sapL}44`:C.bdr2),fontSize:11,padding:"5px 11px" }}>
+                    style={{ ...mkBtn(rid==="l2-refresh"?C.sapL:C.txt,rid==="l2-refresh"?C.sapD:C.surf3,rid==="l2-refresh"?`${C.sapL}44`:C.bdr2,mob),fontSize:12,padding:mob?"10px 8px":"5px 11px",textAlign:"center" }}>
                     {rlbl} ↗
                   </button>
                 ))}
               </div>
             </div>
             <Divider/>
+
             <div style={{ marginBottom:14 }}>
               <span style={labelSt}>Watch items</span>
-              {c.watchItems.map((w,wi)=><div key={wi} style={{ fontSize:11,color:C.txt2,paddingBottom:6,borderBottom:`0.5px solid ${C.bdr}`,marginBottom:6,lineHeight:1.55,display:"flex",gap:8 }}><span style={{ color:C.gold,flexShrink:0 }}>—</span><span>{w}</span></div>)}
+              {c.watchItems.map((w,wi)=><div key={wi} style={{ fontSize:mob?13:11,color:C.txt2,paddingBottom:8,borderBottom:`0.5px solid ${C.bdr}`,marginBottom:8,lineHeight:1.55,display:"flex",gap:8 }}><span style={{ color:C.gold,flexShrink:0 }}>—</span><span>{w}</span></div>)}
             </div>
             <Divider/>
+
             <div>
               <span style={labelSt}>Product pipeline</span>
               {Object.entries(c.products).map(([k,v])=>{
                 const col=v==="active"?C.emL:v==="warm"?C.gold:C.txt3;
-                return <div key={k} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:9 }}>
-                  <span style={{ fontSize:11,color:C.txt2 }}>{PNAMES[k]}</span>
-                  <select value={v} onChange={e=>updProd(c.id,k,e.target.value)} style={{ background:C.surf2,border:`0.5px solid ${C.bdr2}`,borderRadius:4,padding:"3px 8px",fontSize:11,color:col,fontFamily:mono,cursor:"pointer",outline:"none" }}>
+                return <div key={k} style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10 }}>
+                  <span style={{ fontSize:mob?13:11,color:C.txt2 }}>{PNAMES[k]}</span>
+                  <select value={v} onChange={e=>updProd(c.id,k,e.target.value)} style={{ background:C.surf2,border:`0.5px solid ${C.bdr2}`,borderRadius:4,padding:mob?"8px 10px":"3px 8px",fontSize:12,color:col,fontFamily:mono,cursor:"pointer",outline:"none",minHeight:mob?40:undefined }}>
                     {["unknown","warm","active","cold"].map(s=><option key={s} value={s}>{s.charAt(0).toUpperCase()+s.slice(1)}</option>)}
                   </select>
                 </div>;
               })}
-              <button onClick={()=>updateL2(c.id)} style={{ ...mkBtn(C.emL,C.emD,`${C.emL}44`),fontSize:10,padding:"5px 11px",marginTop:8,fontFamily:mono,letterSpacing:"0.04em" }}>Mark L2 updated today</button>
+              <button onClick={()=>updateL2(c.id)} style={{ ...mkBtn(C.emL,C.emD,`${C.emL}44`,mob),fontSize:mob?12:10,padding:mob?"10px 14px":"5px 11px",marginTop:8,fontFamily:mono,letterSpacing:"0.04em",width:mob?"100%":undefined }}>
+                Mark L2 updated today
+              </button>
             </div>
           </div>}
         </div>;
@@ -418,23 +468,25 @@ function CoverageView({ clients,setClients,setSelClientId,setSelRoutine,setField
 }
 
 function LaunchView({ clients,setClients,selRoutine,setSelRoutine,selClientId,setSelClientId,fields,setFields,setActivityLog,setOutreach }) {
-  const [prompt,setPrompt]=useState("");
-  const [copied,setCopied]=useState(false);
-  const [captureText,setCaptureText]=useState("");
-  const [captured,setCaptured]=useState(null);
+  const mob = useMobile();
+  const px  = mob ? "14px 14px" : "28px 22px";
+  const [prompt,setPrompt]         = useState("");
+  const [copied,setCopied]         = useState(false);
+  const [captureText,setCaptureText] = useState("");
+  const [captured,setCaptured]     = useState(null);
 
   useEffect(()=>{ if(!selRoutine){setPrompt("");return;} setPrompt(generatePrompt(selRoutine,clients.find(c=>c.id===selClientId),fields,clients)); },[selRoutine,selClientId,fields,clients]);
 
-  const copy=()=>{
-    if(!prompt)return;
+  const copy = () => {
+    if(!prompt) return;
     try{const ta=document.createElement("textarea");ta.value=prompt;ta.style.cssText="position:fixed;top:-9999px;left:-9999px;opacity:0";document.body.appendChild(ta);ta.focus();ta.select();const ok=document.execCommand("copy");document.body.removeChild(ta);if(!ok)throw new Error();setCopied(true);setTimeout(()=>setCopied(false),2200);}
     catch{navigator.clipboard.writeText(prompt).then(()=>{setCopied(true);setTimeout(()=>setCopied(false),2200);}).catch(()=>{});}
   };
 
-  const logRun=()=>{ if(!selRoutine)return; const client=clients.find(c=>c.id===selClientId); setActivityLog(prev=>[{id:Date.now().toString(),date:TODAY_STR,routine:selRoutine,clientId:selClientId||null,clientName:client?.name||null,findings:""},...prev]); };
+  const logRun = () => { if(!selRoutine)return; const client=clients.find(c=>c.id===selClientId); setActivityLog(prev=>[{id:Date.now().toString(),date:TODAY_STR,routine:selRoutine,clientId:selClientId||null,clientName:client?.name||null,findings:""},...prev]); };
 
-  const parseCapture=()=>{
-    let triggerCount=0,l2ClientName=null;
+  const parseCapture = () => {
+    let triggerCount=0, l2ClientName=null;
     const triggers=(captureText.match(/OUTREACH TRIGGER[^\n]*/gi)||[]).map(line=>{
       const p=line.replace(/^OUTREACH TRIGGER\s*[-—]\s*/i,"").split(/\s*[-—]\s*/);
       const isNew=p.length>=4, institution=isNew?(p[0]?.trim()||""):"";
@@ -457,62 +509,71 @@ function LaunchView({ clients,setClients,selRoutine,setSelRoutine,selClientId,se
     setCaptured({triggerCount,l2ClientName});
   };
 
-  const routine=ROUTINES.find(r=>r.id===selRoutine);
-  const selClient=clients.find(c=>c.id===selClientId);
-  const fieldDefs={
+  const routine   = ROUTINES.find(r=>r.id===selRoutine);
+  const selClient = clients.find(c=>c.id===selClientId);
+  const fieldDefs = {
     "meeting-prep":[{key:"role",lbl:"Stakeholder role",ph:"e.g. Head of Markets Singapore"},{key:"context",lbl:"Meeting context",ph:"e.g. Quarterly relationship review"},{key:"agenda",lbl:"Likely agenda",ph:"e.g. Unclear / clearing discussion"},{key:"signals",lbl:"Signals to factor in",ph:"From morning scan, or: none"}],
     "post-call":[{key:"roles",lbl:"Roles present",ph:"e.g. Group Treasurer, Head of Markets"},{key:"meetingType",lbl:"Meeting type",ph:"e.g. Relationship review"},{key:"date",lbl:"Date",ph:TODAY_STR,type:"date"}],
   };
 
   return (
-    <div style={{ padding:"28px 22px",maxWidth:880,margin:"0 auto" }}>
-      <div style={{ fontFamily:serif,fontSize:22,color:C.txt,marginBottom:4,fontWeight:400 }}>Routine Launcher</div>
-      <div style={{ fontFamily:mono,fontSize:9,color:C.txt3,marginBottom:24,letterSpacing:"0.07em" }}>SELECT → CONFIGURE → COPY → PASTE INTO CLAUDE PROJECT (FRESH CHAT)</div>
-      <div style={{ marginBottom:18 }}>
+    <div style={{ padding:px, maxWidth:880, margin:"0 auto" }}>
+      <div style={{ fontFamily:serif,fontSize:mob?20:22,color:C.txt,marginBottom:4,fontWeight:400 }}>Routine Launcher</div>
+      <div style={{ fontFamily:mono,fontSize:9,color:C.txt3,marginBottom:20,letterSpacing:"0.07em" }}>SELECT → CONFIGURE → COPY → PASTE INTO CLAUDE PROJECT</div>
+
+      {/* Routine selector — single column on mobile */}
+      <div style={{ marginBottom:16 }}>
         <span style={labelSt}>Step 1 — Select routine</span>
-        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:9 }}>
+        <div style={{ display:"grid", gridTemplateColumns:mob?"1fr":"1fr 1fr", gap:9 }}>
           {ROUTINES.map(r=>(
             <button key={r.id} onClick={()=>{setSelRoutine(r.id);setFields({});}}
-              style={{ background:selRoutine===r.id?C.surf3:"none",border:`0.5px solid ${selRoutine===r.id?C.gold:C.bdr}`,borderRadius:8,padding:"12px 14px",cursor:"pointer",textAlign:"left",color:C.txt }}>
-              <div style={{ fontSize:12,fontWeight:600,color:selRoutine===r.id?C.gold:C.txt,marginBottom:3 }}>{r.label}</div>
-              <div style={{ fontSize:10,color:C.txt3,fontFamily:mono }}>{r.sub}</div>
+              style={{ background:selRoutine===r.id?C.surf3:"none",border:`0.5px solid ${selRoutine===r.id?C.gold:C.bdr}`,borderRadius:8,padding:mob?"13px 14px":"12px 14px",cursor:"pointer",textAlign:"left",color:C.txt,minHeight:mob?54:undefined }}>
+              <div style={{ fontSize:13,fontWeight:600,color:selRoutine===r.id?C.gold:C.txt,marginBottom:3 }}>{r.label}</div>
+              <div style={{ fontSize:11,color:C.txt3,fontFamily:mono }}>{r.sub}</div>
             </button>
           ))}
         </div>
       </div>
-      {selRoutine&&<div style={{ ...cardSt,marginBottom:16 }}>
+
+      {selRoutine&&<div style={{ ...cardSt,marginBottom:14 }}>
         <span style={labelSt}>Step 2 — Configure</span>
         {routine?.needsClient&&<div style={{ marginBottom:14 }}>
-          <div style={{ fontSize:11,color:C.txt2,marginBottom:6 }}>Client</div>
-          <div style={{ display:"flex",alignItems:"center",gap:12,flexWrap:"wrap" }}>
-            <select value={selClientId} onChange={e=>setSelClientId(e.target.value)} style={{ ...inputSt,width:"auto",minWidth:200 }}>
+          <div style={{ fontSize:12,color:C.txt2,marginBottom:6 }}>Client</div>
+          <div style={{ display:"flex",flexDirection:mob?"column":"row",alignItems:mob?"stretch":"center",gap:10 }}>
+            <select value={selClientId} onChange={e=>setSelClientId(e.target.value)} style={{ ...inputSt,width:"100%",maxWidth:mob?"100%":280 }}>
               <option value="">Select client</option>
               {["1A","1B","2"].map(t=><optgroup key={t} label={`Tier ${t}`}>{clients.filter(c=>c.tier===t).map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</optgroup>)}
             </select>
-            {selClient&&<span style={{ fontFamily:mono,fontSize:10,color:H_COL[getHealth(selClient.l2Updated)],letterSpacing:"0.06em" }}>L2 {getHealth(selClient.l2Updated).toUpperCase()} · {daysSince(selClient.l2Updated)}d</span>}
+            {selClient&&<span style={{ fontFamily:mono,fontSize:11,color:H_COL[getHealth(selClient.l2Updated)] }}>L2 {getHealth(selClient.l2Updated).toUpperCase()} · {daysSince(selClient.l2Updated)}d</span>}
           </div>
         </div>}
         {fieldDefs[selRoutine]
-          ?<div style={{ display:"grid",gridTemplateColumns:"1fr",gap:12 }}>{fieldDefs[selRoutine].map(f=><div key={f.key}><div style={{ fontSize:11,color:C.txt2,marginBottom:5 }}>{f.lbl}</div><input style={inputSt} type={f.type||"text"} placeholder={f.ph} value={fields[f.key]||""} onChange={e=>setFields(p=>({...p,[f.key]:e.target.value}))}/></div>)}</div>
-          :<div style={{ fontSize:11,color:C.txt3,fontFamily:mono,lineHeight:1.75 }}>{routine?.desc||""}</div>}
+          ?<div style={{ display:"grid",gridTemplateColumns:"1fr",gap:12 }}>
+              {fieldDefs[selRoutine].map(f=><div key={f.key}><div style={{ fontSize:12,color:C.txt2,marginBottom:5 }}>{f.lbl}</div><input style={inputSt} type={f.type||"text"} placeholder={f.ph} value={fields[f.key]||""} onChange={e=>setFields(p=>({...p,[f.key]:e.target.value}))}/></div>)}
+            </div>
+          :<div style={{ fontSize:12,color:C.txt3,fontFamily:mono,lineHeight:1.75 }}>{routine?.desc||""}</div>}
       </div>}
-      {prompt&&<div style={{ marginBottom:16 }}>
-        <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8,flexWrap:"wrap",gap:8 }}>
+
+      {prompt&&<div style={{ marginBottom:14 }}>
+        <div style={{ display:"flex",flexDirection:mob?"column":"row",justifyContent:"space-between",alignItems:mob?"stretch":"center",marginBottom:8,gap:8 }}>
           <span style={labelSt}>Step 3 — Copy → paste into Claude Project</span>
           <div style={{ display:"flex",gap:8 }}>
-            <button onClick={copy} style={{ ...mkBtn(copied?C.emL:C.txt,C.surf3,copied?`${C.emL}44`:C.bdr2),fontFamily:mono,fontSize:11,padding:"5px 14px",letterSpacing:"0.04em" }}>{copied?"✓ Copied":"Copy prompt"}</button>
-            <button onClick={logRun} style={{ ...mkBtn(C.txt2,"none",C.bdr),fontFamily:mono,fontSize:11,padding:"5px 12px" }}>Log run</button>
+            <button onClick={copy} style={{ ...mkBtn(copied?C.emL:C.txt,C.surf3,copied?`${C.emL}44`:C.bdr2,mob),fontFamily:mono,fontSize:12,padding:mob?"11px 16px":"5px 14px",flex:mob?1:undefined }}>
+              {copied?"✓ Copied":"Copy prompt"}
+            </button>
+            <button onClick={logRun} style={{ ...mkBtn(C.txt2,"none",C.bdr,mob),fontFamily:mono,fontSize:12,padding:mob?"11px 14px":"5px 12px" }}>Log</button>
           </div>
         </div>
-        {selRoutine==="earnings"&&<div style={{ background:C.burgD,border:`0.5px solid ${C.burgL}44`,borderRadius:6,padding:"10px 14px",marginBottom:12,fontFamily:mono,fontSize:11,color:C.burgL,lineHeight:1.75 }}>⚠ Always run earnings deep-dives in a fresh Claude Project chat.</div>}
-        <textarea readOnly value={prompt} rows={13} style={{ ...inputSt,resize:"vertical",fontFamily:mono,fontSize:11,lineHeight:1.85,background:C.surf,cursor:"default",color:C.txt2 }}/>
+        {selRoutine==="earnings"&&<div style={{ background:C.burgD,border:`0.5px solid ${C.burgL}44`,borderRadius:6,padding:"10px 14px",marginBottom:10,fontFamily:mono,fontSize:11,color:C.burgL,lineHeight:1.75 }}>⚠ Always run earnings deep-dives in a fresh Claude Project chat.</div>}
+        <textarea readOnly value={prompt} rows={mob?10:13} style={{ ...inputSt,resize:"vertical",fontFamily:mono,fontSize:11,lineHeight:1.85,background:C.surf,cursor:"default",color:C.txt2 }}/>
       </div>}
+
       {selRoutine&&<div style={cardSt}>
         <span style={labelSt}>Output capture</span>
-        <div style={{ fontSize:11,color:C.txt3,marginBottom:12,lineHeight:1.75 }}>Paste Claude's output to extract <code style={{ fontFamily:mono,color:C.gold,fontSize:10 }}>OUTREACH TRIGGER —</code> lines and parse <code style={{ fontFamily:mono,color:C.sapL,fontSize:10 }}>L2_START...L2_END</code> blocks.</div>
-        <textarea placeholder="Paste Claude's output here..." value={captureText} onChange={e=>{setCaptureText(e.target.value);setCaptured(null);}} rows={5} style={{ ...inputSt,resize:"vertical",fontFamily:mono,fontSize:11,lineHeight:1.75,marginBottom:12 }}/>
-        <div style={{ display:"flex",alignItems:"center",gap:12,flexWrap:"wrap" }}>
-          <button onClick={parseCapture} style={{ ...mkBtn(C.txt,C.surf3),fontSize:11,padding:"5px 14px" }}>Extract</button>
+        <div style={{ fontSize:12,color:C.txt3,marginBottom:12,lineHeight:1.75 }}>Paste Claude's output to extract <span style={{ fontFamily:mono,color:C.gold,fontSize:10 }}>OUTREACH TRIGGER —</span> lines and parse <span style={{ fontFamily:mono,color:C.sapL,fontSize:10 }}>L2_START...L2_END</span> blocks.</div>
+        <textarea placeholder="Paste Claude's output here..." value={captureText} onChange={e=>{setCaptureText(e.target.value);setCaptured(null);}} rows={mob?6:5} style={{ ...inputSt,resize:"vertical",fontFamily:mono,fontSize:11,lineHeight:1.75,marginBottom:12 }}/>
+        <div style={{ display:"flex",flexDirection:mob?"column":"row",alignItems:mob?"stretch":"center",gap:10 }}>
+          <button onClick={parseCapture} style={{ ...mkBtn(C.txt,C.surf3,C.bdr2,mob),fontSize:12,padding:mob?"11px 16px":"5px 14px" }}>Extract</button>
           {captured&&<div style={{ display:"flex",flexDirection:"column",gap:4 }}>
             {captured.triggerCount>0?<span style={{ fontFamily:mono,fontSize:11,color:C.emL }}>✓ {captured.triggerCount} trigger{captured.triggerCount>1?"s":""} added</span>:<span style={{ fontFamily:mono,fontSize:11,color:C.txt3 }}>No OUTREACH TRIGGER lines found</span>}
             {captured.l2ClientName?<span style={{ fontFamily:mono,fontSize:11,color:C.sapL }}>✓ Layer 2 updated — {captured.l2ClientName}</span>:selRoutine==="l2-refresh"&&<span style={{ fontFamily:mono,fontSize:11,color:C.txt3 }}>No L2_START block found</span>}
@@ -523,97 +584,98 @@ function LaunchView({ clients,setClients,selRoutine,setSelRoutine,selClientId,se
   );
 }
 
-function PipelineView({ clients,outreach,setOutreach }) {
-  const [showClosed,setShowClosed]=useState(false);
-  const [form,setForm]=useState({institution:"",clientId:"",role:"",action:"",due:"",source:""});
+function PipelineView({ clients, outreach, setOutreach }) {
+  const mob = useMobile();
+  const px  = mob ? "14px 14px" : "28px 22px";
+  const [showClosed, setShowClosed] = useState(false);
+  const [form, setForm] = useState({institution:"",clientId:"",role:"",action:"",due:"",source:""});
 
-  const addTrigger=()=>{
-    if(!form.role||!form.action)return;
-    const mc=form.clientId?clients.find(c=>c.id===form.clientId):null;
+  const addTrigger = () => {
+    if(!form.role||!form.action) return;
+    const mc = form.clientId?clients.find(c=>c.id===form.clientId):null;
     setOutreach(prev=>[{id:Date.now().toString(),...form,institution:form.institution||mc?.name||"",status:"open",created:TODAY_STR,outcome:""},...prev]);
     setForm({institution:"",clientId:"",role:"",action:"",due:"",source:""});
   };
-  const updStatus = (id,status) => setOutreach(prev=>prev.map(t=>t.id===id?{...t,status}:t));
-  // Hard delete — permanently removes the trigger from state and therefore localStorage
-  const deleteTrigger = (id) => setOutreach(prev=>prev.filter(t=>t.id!==id));
+  const updStatus    = (id,status) => setOutreach(prev=>prev.map(t=>t.id===id?{...t,status}:t));
+  const deleteTrigger= (id)        => setOutreach(prev=>prev.filter(t=>t.id!==id));
 
-  const openC=outreach.filter(t=>t.status==="open").length;
-  const inProgC=outreach.filter(t=>t.status==="in_progress").length;
-  const closedC=outreach.filter(t=>t.status==="closed"||t.status==="abandoned").length;
-  const visible=outreach.filter(t=>showClosed?true:t.status==="open"||t.status==="in_progress");
+  const openC   = outreach.filter(t=>t.status==="open").length;
+  const inProgC = outreach.filter(t=>t.status==="in_progress").length;
+  const closedC = outreach.filter(t=>t.status==="closed"||t.status==="abandoned").length;
+  const visible = outreach.filter(t=>showClosed?true:t.status==="open"||t.status==="in_progress");
 
   return (
-    <div style={{ padding:"28px 22px",maxWidth:880,margin:"0 auto" }}>
-      <div style={{ fontFamily:serif,fontSize:22,color:C.txt,marginBottom:4,fontWeight:400 }}>Outreach Pipeline</div>
-      <div style={{ fontFamily:mono,fontSize:9,color:C.txt3,marginBottom:22,letterSpacing:"0.07em" }}>{openC} OPEN · {inProgC} IN PROGRESS · {closedC} CLOSED</div>
+    <div style={{ padding:px, maxWidth:880, margin:"0 auto" }}>
+      <div style={{ fontFamily:serif,fontSize:mob?20:22,color:C.txt,marginBottom:4,fontWeight:400 }}>Outreach Pipeline</div>
+      <div style={{ fontFamily:mono,fontSize:9,color:C.txt3,marginBottom:18,letterSpacing:"0.07em" }}>{openC} OPEN · {inProgC} IN PROGRESS · {closedC} CLOSED</div>
+
+      {/* Add trigger form — single column on mobile */}
       <div style={cardSt}>
         <span style={labelSt}>Add trigger manually</span>
-        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12 }}>
+        <div style={{ display:"grid", gridTemplateColumns:"1fr", gap:10, marginBottom:12 }}>
           {[
             {key:"clientId",lbl:"Client",type:"sel"},
-            {key:"role",lbl:"Role to contact",ph:"e.g. Head of Markets Singapore"},
-            {key:"action",lbl:"Action — what to do and open with",ph:"Request meeting: lead with TLAC consultation as DCM pipeline entry point"},
-            {key:"due",lbl:"Due by",type:"date"},
-            {key:"source",lbl:"Source",ph:"e.g. Morning scan 19 May"},
+            {key:"role",    lbl:"Role to contact",ph:"e.g. Head of Markets Singapore"},
+            {key:"action",  lbl:"Action — what to do and open with",ph:"Request meeting: lead with TLAC consultation as DCM entry point"},
+            {key:"due",     lbl:"Due by",type:"date"},
+            {key:"source",  lbl:"Source",ph:"e.g. Morning scan 19 May"},
           ].map(f=>(
-            <div key={f.key} style={f.key==="action"?{gridColumn:"1 / -1"}:{}}>
-              <div style={{ fontSize:11,color:C.txt2,marginBottom:5 }}>{f.lbl}</div>
+            <div key={f.key}>
+              <div style={{ fontSize:12,color:C.txt2,marginBottom:5 }}>{f.lbl}</div>
               {f.type==="sel"
-                ?<select value={form[f.key]} onChange={e=>{const c=clients.find(cl=>cl.id===e.target.value);setForm(p=>({...p,clientId:e.target.value,institution:c?.name||p.institution}));}} style={inputSt}>
-                    <option value="">Select client</option>
-                    {clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
-                  </select>
+                ?<select value={form[f.key]} onChange={e=>{const c=clients.find(cl=>cl.id===e.target.value);setForm(p=>({...p,clientId:e.target.value,institution:c?.name||p.institution}));}} style={inputSt}><option value="">Select client</option>{clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select>
                 :<input type={f.type||"text"} style={inputSt} placeholder={f.ph||""} value={form[f.key]} onChange={e=>setForm(p=>({...p,[f.key]:e.target.value}))}/>}
             </div>
           ))}
         </div>
-        <button onClick={addTrigger} style={{ ...mkBtn(C.txt,C.surf3),width:"100%",padding:"9px" }}>Add trigger</button>
+        <button onClick={addTrigger} style={{ ...mkBtn(C.txt,C.surf3,C.bdr2,mob),width:"100%",padding:mob?"12px":"9px",fontSize:13 }}>Add trigger</button>
       </div>
 
       <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12 }}>
         <span style={labelSt}>Active triggers</span>
-        <button onClick={()=>setShowClosed(!showClosed)} style={{ background:"none",border:"none",cursor:"pointer",fontFamily:mono,fontSize:10,color:C.txt3,letterSpacing:"0.04em" }}>
+        <button onClick={()=>setShowClosed(!showClosed)} style={{ background:"none",border:"none",cursor:"pointer",fontFamily:mono,fontSize:11,color:C.txt3,minHeight:44,padding:"0 4px" }}>
           {showClosed?"↑ Hide closed":"↓ Show closed"}
         </button>
       </div>
 
       {visible.length===0
-        ?<div style={{ color:C.txt3,fontFamily:mono,fontSize:11,padding:"26px 0",lineHeight:2.2 }}>No active triggers. Use output capture on the Launch tab, or add manually above.</div>
+        ?<div style={{ color:C.txt3,fontFamily:mono,fontSize:12,padding:"26px 0",lineHeight:2.2 }}>No active triggers. Use output capture on the Launch tab, or add manually above.</div>
         :visible.map(t=>{
-          const cm=clients.find(c=>c.id===t.clientId), di=t.institution||cm?.name||"—";
-          const du=t.due?daysUntil(t.due):null, ov=du!==null&&du<0;
-          const closed=t.status==="closed"||t.status==="abandoned";
-          const lcol=ov?C.burgL:closed?C.txt3:t.status==="in_progress"?C.sapL:C.bdr2;
+          const cm  = clients.find(c=>c.id===t.clientId), di=t.institution||cm?.name||"—";
+          const du  = t.due?daysUntil(t.due):null, ov=du!==null&&du<0;
+          const closed = t.status==="closed"||t.status==="abandoned";
+          const lcol   = ov?C.burgL:closed?C.txt3:t.status==="in_progress"?C.sapL:C.bdr2;
+
           return (
             <div key={t.id} style={{ ...cardSt,borderLeft:`2px solid ${lcol}`,opacity:closed?0.5:1,marginBottom:10 }}>
-              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",flexWrap:"wrap",gap:10 }}>
-                <div style={{ flex:1 }}>
-                  <div style={{ display:"flex",gap:8,alignItems:"center",marginBottom:6,flexWrap:"wrap" }}>
-                    <span style={{ fontFamily:mono,fontSize:11,color:C.gold,fontWeight:700,letterSpacing:"0.05em" }}>{di}</span>
-                    <span style={{ color:C.txt3,fontSize:10 }}>·</span>
-                    <span style={{ fontSize:12,color:C.txt,fontWeight:500 }}>{t.role}</span>
-                    {ov&&<span style={pill(C.burgL,C.burgD,`${C.burgL}44`)}>OVERDUE</span>}
-                    {t.status==="in_progress"&&<span style={pill(C.sapL,C.sapD,`${C.sapL}44`)}>IN PROGRESS</span>}
-                    {t.status==="closed"&&<span style={pill(C.emL,C.emD,`${C.emL}44`)}>CLOSED</span>}
-                    {t.status==="abandoned"&&<span style={pill(C.txt3,"transparent",C.bdr)}>DROPPED</span>}
-                  </div>
-                  <div style={{ fontSize:12,color:C.txt2,marginBottom:8,lineHeight:1.6 }}>{t.action}</div>
-                  <div style={{ display:"flex",gap:14,fontFamily:mono,fontSize:10,color:C.txt3,flexWrap:"wrap",letterSpacing:"0.03em" }}>
-                    {t.due&&<span>Due: {fmtDate(t.due)}{du!==null?` (${ov?`${Math.abs(du)}d overdue`:`${du}d`})`:""}</span>}
-                    {t.source&&<span>Via: {t.source}</span>}
-                  </div>
+              {/* Trigger body — text always on top */}
+              <div style={{ marginBottom:12 }}>
+                <div style={{ display:"flex",gap:7,alignItems:"center",marginBottom:6,flexWrap:"wrap" }}>
+                  <span style={{ fontFamily:mono,fontSize:mob?12:11,color:C.gold,fontWeight:700,letterSpacing:"0.05em" }}>{di}</span>
+                  <span style={{ color:C.txt3,fontSize:10 }}>·</span>
+                  <span style={{ fontSize:mob?13:12,color:C.txt,fontWeight:500 }}>{t.role}</span>
+                  {ov&&<span style={pill(C.burgL,C.burgD,`${C.burgL}44`)}>OVERDUE</span>}
+                  {t.status==="in_progress"&&<span style={pill(C.sapL,C.sapD,`${C.sapL}44`)}>IN PROGRESS</span>}
+                  {t.status==="closed"&&<span style={pill(C.emL,C.emD,`${C.emL}44`)}>CLOSED</span>}
+                  {t.status==="abandoned"&&<span style={pill(C.txt3,"transparent",C.bdr)}>DROPPED</span>}
                 </div>
+                <div style={{ fontSize:mob?13:12,color:C.txt2,marginBottom:8,lineHeight:1.6 }}>{t.action}</div>
+                <div style={{ display:"flex",gap:14,fontFamily:mono,fontSize:10,color:C.txt3,flexWrap:"wrap" }}>
+                  {t.due&&<span>Due: {fmtDate(t.due)}{du!==null?` (${ov?`${Math.abs(du)}d overdue`:`${du}d`})`:""}</span>}
+                  {t.source&&<span>Via: {t.source}</span>}
+                </div>
+              </div>
 
-                {/* Action buttons — working/close/drop for open triggers, delete for all */}
-                <div style={{ display:"flex",gap:5,flexShrink:0,alignItems:"flex-start",flexWrap:"wrap" }}>
-                  {!closed&&<>
-                    {t.status==="open"&&
-                      <button onClick={()=>updStatus(t.id,"in_progress")} style={{ ...mkBtn(C.sapL,"none",`${C.sapL}44`),fontSize:10,padding:"4px 10px",fontFamily:mono }}>Working</button>}
-                    <button onClick={()=>updStatus(t.id,"closed")} style={{ ...mkBtn(C.emL,"none",`${C.emL}44`),fontSize:10,padding:"4px 10px",fontFamily:mono }}>Close</button>
-                    <button onClick={()=>updStatus(t.id,"abandoned")} style={{ ...mkBtn(C.txt3,"none",C.bdr),fontSize:10,padding:"4px 10px",fontFamily:mono }}>Drop</button>
-                  </>}
-                  {/* Delete button — always visible, two-step confirmation */}
-                  <DeleteButton onConfirm={()=>deleteTrigger(t.id)}/>
+              {/* Action buttons — always below text, fill width on mobile */}
+              <div style={{ display:"flex",gap:8,flexWrap:"wrap",paddingTop:10,borderTop:`0.5px solid ${C.bdr}` }}>
+                {!closed&&<>
+                  {t.status==="open"&&
+                    <button onClick={()=>updStatus(t.id,"in_progress")} style={{ ...mkBtn(C.sapL,"none",`${C.sapL}44`,mob),fontSize:mob?13:11,padding:mob?"10px 14px":"5px 11px",fontFamily:mono,flex:mob?"1":undefined }}>Working</button>}
+                  <button onClick={()=>updStatus(t.id,"closed")} style={{ ...mkBtn(C.emL,"none",`${C.emL}44`,mob),fontSize:mob?13:11,padding:mob?"10px 14px":"5px 11px",fontFamily:mono,flex:mob?"1":undefined }}>Close</button>
+                  <button onClick={()=>updStatus(t.id,"abandoned")} style={{ ...mkBtn(C.txt3,"none",C.bdr,mob),fontSize:mob?13:11,padding:mob?"10px 14px":"5px 11px",fontFamily:mono,flex:mob?"1":undefined }}>Drop</button>
+                </>}
+                <div style={{ flex:mob&&!closed?"1":undefined }}>
+                  <DeleteButton onConfirm={()=>deleteTrigger(t.id)} mob={mob}/>
                 </div>
               </div>
             </div>
@@ -623,34 +685,60 @@ function PipelineView({ clients,outreach,setOutreach }) {
   );
 }
 
-function LogView({ clients,activityLog,setActivityLog }) {
-  const [form,setForm]=useState({clientId:"",routine:"",findings:""});
-  const add=()=>{ if(!form.routine)return; const client=clients.find(c=>c.id===form.clientId); setActivityLog(prev=>[{id:Date.now().toString(),date:TODAY_STR,...form,clientName:client?.name||null},...prev]); setForm({clientId:"",routine:"",findings:""}); };
+function LogView({ clients, activityLog, setActivityLog }) {
+  const mob = useMobile();
+  const px  = mob ? "14px 14px" : "28px 22px";
+  const [form, setForm] = useState({clientId:"",routine:"",findings:""});
+  const add = () => {
+    if(!form.routine) return;
+    const client=clients.find(c=>c.id===form.clientId);
+    setActivityLog(prev=>[{id:Date.now().toString(),date:TODAY_STR,...form,clientName:client?.name||null},...prev]);
+    setForm({clientId:"",routine:"",findings:""});
+  };
+
   return (
-    <div style={{ padding:"28px 22px",maxWidth:880,margin:"0 auto" }}>
-      <div style={{ fontFamily:serif,fontSize:22,color:C.txt,marginBottom:4,fontWeight:400 }}>Activity Log</div>
-      <div style={{ fontFamily:mono,fontSize:9,color:C.txt3,marginBottom:22,letterSpacing:"0.07em" }}>{activityLog.length} ENTRIES</div>
+    <div style={{ padding:px, maxWidth:880, margin:"0 auto" }}>
+      <div style={{ fontFamily:serif,fontSize:mob?20:22,color:C.txt,marginBottom:4,fontWeight:400 }}>Activity Log</div>
+      <div style={{ fontFamily:mono,fontSize:9,color:C.txt3,marginBottom:18,letterSpacing:"0.07em" }}>{activityLog.length} ENTRIES</div>
+
       <div style={cardSt}>
         <span style={labelSt}>Quick log entry</span>
-        <div style={{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12 }}>
-          <div><div style={{ fontSize:11,color:C.txt2,marginBottom:5 }}>Client (optional)</div><select value={form.clientId} onChange={e=>setForm(p=>({...p,clientId:e.target.value}))} style={inputSt}><option value="">No specific client</option>{clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}</select></div>
-          <div><div style={{ fontSize:11,color:C.txt2,marginBottom:5 }}>Routine run</div><select value={form.routine} onChange={e=>setForm(p=>({...p,routine:e.target.value}))} style={inputSt}><option value="">Select routine</option>{ROUTINES.map(r=><option key={r.id} value={r.id}>{r.label}</option>)}</select></div>
+        {/* Single column on mobile */}
+        <div style={{ display:"grid",gridTemplateColumns:"1fr",gap:10,marginBottom:12 }}>
+          <div>
+            <div style={{ fontSize:12,color:C.txt2,marginBottom:5 }}>Client (optional)</div>
+            <select value={form.clientId} onChange={e=>setForm(p=>({...p,clientId:e.target.value}))} style={inputSt}>
+              <option value="">No specific client</option>
+              {clients.map(c=><option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <div style={{ fontSize:12,color:C.txt2,marginBottom:5 }}>Routine run</div>
+            <select value={form.routine} onChange={e=>setForm(p=>({...p,routine:e.target.value}))} style={inputSt}>
+              <option value="">Select routine</option>
+              {ROUTINES.map(r=><option key={r.id} value={r.id}>{r.label}</option>)}
+            </select>
+          </div>
         </div>
-        <div style={{ marginBottom:12 }}><div style={{ fontSize:11,color:C.txt2,marginBottom:5 }}>Key findings (optional)</div><textarea value={form.findings} onChange={e=>setForm(p=>({...p,findings:e.target.value}))} placeholder="e.g. Key theme surfaced, product signal, Layer 2 update made..." rows={3} style={{ ...inputSt,resize:"vertical",fontFamily:mono,fontSize:11,lineHeight:1.75 }}/></div>
-        <button onClick={add} style={{ ...mkBtn(C.txt,C.surf3),width:"100%",padding:"9px" }}>Log</button>
+        <div style={{ marginBottom:12 }}>
+          <div style={{ fontSize:12,color:C.txt2,marginBottom:5 }}>Key findings (optional)</div>
+          <textarea value={form.findings} onChange={e=>setForm(p=>({...p,findings:e.target.value}))} placeholder="e.g. Key theme surfaced, product signal, L2 update made..." rows={3} style={{ ...inputSt,resize:"vertical",fontFamily:mono,fontSize:12,lineHeight:1.75 }}/>
+        </div>
+        <button onClick={add} style={{ ...mkBtn(C.txt,C.surf3,C.bdr2,mob),width:"100%",padding:mob?"12px":"9px",fontSize:13 }}>Log</button>
       </div>
+
       {activityLog.length===0
-        ?<div style={{ color:C.txt3,fontFamily:mono,fontSize:11,padding:"26px 0",lineHeight:2.2 }}>No entries yet.</div>
+        ?<div style={{ color:C.txt3,fontFamily:mono,fontSize:12,padding:"26px 0",lineHeight:2.2 }}>No entries yet.</div>
         :activityLog.map(entry=>{
           const rLabel=ROUTINES.find(r=>r.id===entry.routine)?.label||entry.routine;
-          return <div key={entry.id} style={{ ...cardSt,marginBottom:8,display:"flex",gap:16,alignItems:"flex-start" }}>
-            <div style={{ fontFamily:mono,fontSize:10,color:C.txt3,minWidth:62,paddingTop:2,flexShrink:0,letterSpacing:"0.03em" }}>{fmtDate(entry.date)}</div>
+          return <div key={entry.id} style={{ ...cardSt,marginBottom:8,display:"flex",gap:14,alignItems:"flex-start" }}>
+            <div style={{ fontFamily:mono,fontSize:10,color:C.txt3,minWidth:58,paddingTop:2,flexShrink:0 }}>{fmtDate(entry.date)}</div>
             <div style={{ flex:1 }}>
               <div style={{ display:"flex",gap:8,alignItems:"center",marginBottom:4,flexWrap:"wrap" }}>
-                <span style={{ fontSize:12,color:C.txt,fontWeight:500 }}>{rLabel}</span>
+                <span style={{ fontSize:13,color:C.txt,fontWeight:500 }}>{rLabel}</span>
                 {entry.clientName&&<span style={{ fontFamily:mono,fontSize:10,color:C.gold }}>· {entry.clientName}</span>}
               </div>
-              {entry.findings&&<div style={{ fontSize:11,color:C.txt2,lineHeight:1.75 }}>{entry.findings}</div>}
+              {entry.findings&&<div style={{ fontSize:mob?13:11,color:C.txt2,lineHeight:1.75 }}>{entry.findings}</div>}
             </div>
           </div>;
         })}
@@ -660,6 +748,7 @@ function LogView({ clients,activityLog,setActivityLog }) {
 
 // ─── Root ─────────────────────────────────────────────────────────────────────
 function App() {
+  const mob = useMobile();
   const [loading,setLoading]           = useState(true);
   const [initialized,setInitialized]   = useState(false);
   const [saveStatus,setSaveStatus]     = useState("idle");
@@ -674,7 +763,6 @@ function App() {
   const saveTimer = useRef(null);
   const importRef = useRef(null);
 
-  // Load from localStorage on mount
   useEffect(()=>{
     const sc=LS.get("fi_clients"), so=LS.get("fi_outreach"), sl=LS.get("fi_log");
     if(sc&&Array.isArray(sc)) setClients(sc.map(norm));
@@ -684,7 +772,6 @@ function App() {
     setLoading(false);
   },[]);
 
-  // Save to localStorage on every state change, debounced 400ms
   useEffect(()=>{
     if(!initialized) return;
     clearTimeout(saveTimer.current);
@@ -708,7 +795,7 @@ function App() {
   },[clients,outreach,activityLog]);
 
   const handleImportChange=useCallback((e)=>{
-    const file=e.target.files?.[0]; if(!file) return;
+    const file=e.target.files?.[0]; if(!file)return;
     const reader=new FileReader();
     reader.onload=(ev)=>{
       try{
@@ -717,18 +804,18 @@ function App() {
         setClients(data.clients.map(norm));
         if(Array.isArray(data.outreach))    setOutreach(data.outreach);
         if(Array.isArray(data.activityLog)) setActivityLog(data.activityLog);
-        setImportStatus({ok:true, msg:`✓ Imported — ${data.clients.length} clients, ${(data.outreach||[]).length} triggers`});
-      }catch(err){ setImportStatus({ok:false, msg:`✗ Import failed: ${err.message}`}); }
+        setImportStatus({ok:true,msg:`✓ ${data.clients.length} clients, ${(data.outreach||[]).length} triggers`});
+      }catch(err){ setImportStatus({ok:false,msg:`✗ Import failed: ${err.message}`}); }
     };
     reader.readAsText(file); e.target.value="";
   },[]);
 
-  const updateL2  = (id) => setClients(prev=>prev.map(c=>c.id===id?{...c,l2Updated:TODAY_STR}:c));
+  const updateL2   = (id) => setClients(prev=>prev.map(c=>c.id===id?{...c,l2Updated:TODAY_STR}:c));
   const openCount  = outreach.filter(t=>t.status==="open").length;
   const staleCount = clients.filter(c=>getHealth(c.l2Updated)==="stale").length;
   const driftCount = clients.filter(c=>getHealth(c.l2Updated)==="drifting").length;
 
-  const TABS=[
+  const TABS = [
     {id:"command",  lbl:"Command"},
     {id:"coverage", lbl:"Coverage"},
     {id:"launch",   lbl:"Launch"},
@@ -736,40 +823,40 @@ function App() {
     {id:"log",      lbl:"Log"},
   ];
 
-  const saveDot = saveStatus==="saved" ? {col:C.emL,  lbl:"● SAVED"}
-               : saveStatus==="error"  ? {col:C.burgL, lbl:"● ERR"}
-               : null;
+  const saveDot = saveStatus==="saved"?{col:C.emL,lbl:"● SAVED"}:saveStatus==="error"?{col:C.burgL,lbl:"● ERR"}:null;
 
   if(loading) return (
     <div style={{ background:C.bg,height:"100vh",display:"flex",alignItems:"center",justifyContent:"center",flexDirection:"column",gap:18 }}>
-      <div style={{ fontFamily:serif,fontSize:20,color:C.gold,letterSpacing:"0.24em",fontWeight:400 }}>FI COV</div>
+      <div style={{ fontFamily:serif,fontSize:20,color:C.gold,letterSpacing:"0.24em" }}>FI COV</div>
       <div style={{ fontFamily:mono,fontSize:10,color:C.txt3,letterSpacing:"0.12em" }}>LOADING</div>
     </div>
   );
 
-  const sharedProps={ onExport:handleExport, onImportClick:()=>importRef.current?.click(), importRef, onImportChange:handleImportChange, importStatus };
+  const sharedProps = { onExport:handleExport, onImportClick:()=>importRef.current?.click(), importRef, onImportChange:handleImportChange, importStatus };
 
   return (
     <div style={{ background:C.bg,minHeight:"100vh",color:C.txt }}>
       {/* Nav */}
       <div style={{ background:`linear-gradient(180deg,${C.surf2} 0%,${C.surf} 100%)`,borderBottom:`0.5px solid ${C.bdr2}`,position:"sticky",top:0,zIndex:100,overflowX:"auto" }}>
-        <div style={{ display:"flex",alignItems:"center",padding:"0 18px",minWidth:"max-content" }}>
-          <div style={{ fontFamily:serif,fontSize:14,color:C.gold,letterSpacing:"0.24em",padding:"0 18px 0 0",borderRight:`0.5px solid ${C.bdr2}`,lineHeight:"48px",marginRight:10,flexShrink:0,fontWeight:400 }}>FI COV</div>
+        <div style={{ display:"flex",alignItems:"center",padding:"0 14px",minWidth:"max-content" }}>
+          <div style={{ fontFamily:serif,fontSize:mob?12:14,color:C.gold,letterSpacing:"0.20em",padding:`0 ${mob?12:18}px 0 0`,borderRight:`0.5px solid ${C.bdr2}`,lineHeight:mob?"50px":"48px",marginRight:mob?8:10,flexShrink:0 }}>
+            {mob?"FIC":"FI COV"}
+          </div>
           {TABS.map(t=>(
-            <button key={t.id} onClick={()=>setTab(t.id)} style={{ background:"none",border:"none",cursor:"pointer",padding:"0 15px",height:48,fontFamily:sans,fontSize:12,fontWeight:500,color:tab===t.id?C.gold:C.txt2,borderBottom:tab===t.id?`2px solid ${C.gold}`:"2px solid transparent",whiteSpace:"nowrap",flexShrink:0,letterSpacing:"0.01em",transition:"color 0.12s" }}>
+            <button key={t.id} onClick={()=>setTab(t.id)} style={{ background:"none",border:"none",cursor:"pointer",padding:`0 ${mob?10:15}px`,height:mob?50:48,fontFamily:sans,fontSize:mob?13:12,fontWeight:500,color:tab===t.id?C.gold:C.txt2,borderBottom:tab===t.id?`2px solid ${C.gold}`:"2px solid transparent",whiteSpace:"nowrap",flexShrink:0 }}>
               {t.lbl}
             </button>
           ))}
-          <div style={{ marginLeft:"auto",fontFamily:mono,fontSize:9,display:"flex",gap:14,alignItems:"center",paddingLeft:18,flexShrink:0,letterSpacing:"0.07em" }}>
+          <div style={{ marginLeft:"auto",fontFamily:mono,fontSize:9,display:"flex",gap:10,alignItems:"center",paddingLeft:12,flexShrink:0,letterSpacing:"0.07em" }}>
             {saveDot    &&<span style={{ color:saveDot.col }}>{saveDot.lbl}</span>}
-            {staleCount>0&&<span style={{ color:C.burgL }}>● {staleCount} STALE</span>}
-            {driftCount>0&&<span style={{ color:C.cogL  }}>● {driftCount} DRIFT</span>}
+            {staleCount>0&&<span style={{ color:C.burgL }}>●{staleCount}</span>}
+            {driftCount>0&&<span style={{ color:C.cogL  }}>●{driftCount}</span>}
           </div>
         </div>
       </div>
 
       {/* Views */}
-      <div>
+      <div style={{ paddingBottom:mob?24:0 }}>
         {tab==="command"  &&<CommandView  clients={clients} outreach={outreach} events={DEFAULT_EVENTS} setTab={setTab} setSelRoutine={setSelRoutine} setSelClientId={setSelClientId} setFields={setFields} updateL2={updateL2} {...sharedProps}/>}
         {tab==="coverage" &&<CoverageView clients={clients} setClients={setClients} setSelClientId={setSelClientId} setSelRoutine={setSelRoutine} setFields={setFields} setTab={setTab} updateL2={updateL2}/>}
         {tab==="launch"   &&<LaunchView   clients={clients} setClients={setClients} selRoutine={selRoutine} setSelRoutine={setSelRoutine} selClientId={selClientId} setSelClientId={setSelClientId} fields={fields} setFields={setFields} setActivityLog={setActivityLog} setOutreach={setOutreach}/>}
